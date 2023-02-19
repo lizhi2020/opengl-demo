@@ -8360,7 +8360,11 @@ int gladLoadGLUserPtr( GLADuserptrloadfunc load, void *userptr) {
     return version;
 }
 
-
+/// <summary>
+/// load gl proc
+/// </summary>
+/// <param name="load"></param>
+/// <returns>return opengl version. 0 means failed. use GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version) to extract version info</returns>
 int gladLoadGL( GLADloadfunc load) {
     return gladLoadGLUserPtr( glad_gl_get_proc_from_userptr, GLAD_GNUC_EXTENSION (void*) load);
 }
