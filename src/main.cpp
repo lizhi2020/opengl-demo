@@ -1,7 +1,9 @@
 #include "glad/gl.h"
 
 #include <cstdio>
-// must include whole windows head file?
+#include <chrono>
+
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <wingdi.h>
 
@@ -32,7 +34,7 @@ bool init_glproc() {
     printf("Loaded OpenGL %d.%d\n", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
     return true;
 }
-void make_openglrc(HWND hWnd) {
+HDC make_openglrc(HWND hWnd) {
     PIXELFORMATDESCRIPTOR pfd =
     {
         sizeof(PIXELFORMATDESCRIPTOR),
@@ -61,6 +63,7 @@ void make_openglrc(HWND hWnd) {
     auto r = SetPixelFormat(ourWindowHandleToDeviceContext, letWindowsChooseThisPixelFormat, &pfd);
     HGLRC ourOpenGLRenderingContext = wglCreateContext(ourWindowHandleToDeviceContext);
     wglMakeCurrent(ourWindowHandleToDeviceContext, ourOpenGLRenderingContext);
+    return ourWindowHandleToDeviceContext;
 }
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
@@ -82,6 +85,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
     return 0;
 
 }
+extern void drawcall();
 HWND create_dummy() {
     WNDCLASS wc = { 0 };
     wc.lpfnWndProc = WndProc;
@@ -96,14 +100,35 @@ HWND create_dummy() {
 int main() {
     MSG msg = { 0 };
 
+    HDC hdc;
     if (auto p = create_dummy())
-        make_openglrc(p);
+        hdc = make_openglrc(p);
+    else {
+        return 1;
+    }
 
     if (init_glproc())
         printf("success");
 
-    while (GetMessage(&msg, NULL, 0, 0) > 0)
-        DispatchMessage(&msg);
+    auto last = std::chrono::system_clock::now();
 
+    // why when i resize the window, draw will be stopped?
+    while (true) {
+        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+            if (msg.message == WM_QUIT) {
+                break;
+            }
+            // do i need dispatch here?
+            DispatchMessage(&msg);
+        };
+        // detect frame time
+        // always greater than 20ms?
+        //auto cur = std::chrono::system_clock::now();
+        //auto dur = std::chrono::duration_cast<std::chrono::microseconds>(cur - last);
+        //last = cur;
+        //printf("%lld\n", dur.count());
+        drawcall();
+        SwapBuffers(hdc);
+    }
     return 0;
 }
