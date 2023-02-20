@@ -7,20 +7,24 @@
 
 #pragma comment (lib, "opengl32.lib")
 
-GLADapiproc getproc(const char* name) {
-    auto p = (GLADapiproc)wglGetProcAddress(name);
-    if (p == 0 ||
-        (p == (void*)0x1) || (p == (void*)0x2) || (p == (void*)0x3) ||
-        (p == (void*)-1)) {
-        HMODULE module = LoadLibraryA("opengl32.dll");
-        if (module != NULL)
-            p = (GLADapiproc)GetProcAddress(module, name);
-    }
-
-    return p;
-}
+/// <summary>
+/// init opengl api within glad. require a valid gl context been current
+/// </summary>
+/// <returns></returns>
 bool init_glproc() {
-    auto version = gladLoadGL(getproc);
+    auto f = [](const char* name) {
+        auto p = (GLADapiproc)wglGetProcAddress(name);
+        if (p == 0 ||
+            (p == (void*)0x1) || (p == (void*)0x2) || (p == (void*)0x3) ||
+            (p == (void*)-1)) {
+            HMODULE module = LoadLibraryA("opengl32.dll");
+            if (module != NULL)
+                p = (GLADapiproc)GetProcAddress(module, name);
+        }
+
+        return p;
+    };
+    auto version = gladLoadGL((GLADloadfunc)f);
     if (version == 0) {
         printf("Failed to initialize OpenGL context\n");
         return false;
